@@ -1,0 +1,12 @@
+# Name,   Type, SubType, Offset,   Size,      Flags
+# ----------------------------------------------------------------
+# 注：bootloader 占 0x0000 ~ 0x8000，分区表占 0x8000 ~ 0x9000
+# ESP32-P4 Flash: 16MB (0x1000000)
+
+nvs,       data, nvs,      0x9000,   0x6000,
+phy_init,  data, phy,      0xF000,   0x1000,
+factory,   app,  factory,  0x10000,  0x300000,
+ota_0,     app,  ota_0,    0x310000, 0x300000,
+ota_1,     app,  ota_1,    0x610000, 0x300000,
+model,     data, spiffs,   0x910000, 0x600000,
+coredump,  data, coredump, 0xF10000, 0x10000,
