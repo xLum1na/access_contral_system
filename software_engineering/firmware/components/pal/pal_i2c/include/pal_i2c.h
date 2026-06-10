@@ -180,6 +180,16 @@ int pal_i2c_write_reg_byte(pal_i2c_dev_handle_t dev, uint8_t reg, uint8_t val);
  */
 int pal_i2c_read_reg_byte(pal_i2c_dev_handle_t dev, uint8_t reg, uint8_t *val);
 
+/**
+ * @brief 获取底层 I2C 主机总线句柄（供 esp_video 等外部框架复用总线）
+ *
+ * @param handle  PAL I2C 总线句柄
+ * @return 底层 i2c_master_bus_handle_t（可直接传给 esp_video_init_sccb_config_t.i2c_handle）
+ *
+ * @note 调用方需 #include "driver/i2c_master.h" 以获知实际类型
+ */
+void *pal_i2c_get_bus_handle(pal_i2c_bus_handle_t handle);
+
 #ifdef __cplusplus
 }
 #endif

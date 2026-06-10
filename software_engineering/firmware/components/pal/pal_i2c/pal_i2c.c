@@ -49,6 +49,11 @@ int pal_i2c_bus_init(pal_i2c_bus_handle_t *handle,
     return ESP_OK;
 }
 
+void *pal_i2c_get_bus_handle(pal_i2c_bus_handle_t handle)
+{
+    return handle;  /**< PAL 内部直接存储 i2c_master_bus_handle_t */
+}
+
 int pal_i2c_bus_deinit(pal_i2c_bus_handle_t handle)
 {
     if (handle == NULL) {

@@ -6,7 +6,6 @@ idf_component_register(
         "pal_gpio/pal_gpio.c"
         "pal_uart/pal_uart.c"
         "pal_spi/pal_spi.c"
-        "pal_mipi_csi/pal_mipi_csi.c"
         "pal_mipi_dsi/pal_mipi_dsi.c"
 
     INCLUDE_DIRS
@@ -16,7 +15,6 @@ idf_component_register(
         "pal_gpio/include"
         "pal_uart/include"
         "pal_spi/include"
-        "pal_mipi_csi/include"
         "pal_mipi_dsi/include"
         "${IDF_PATH}/components/esp_lcd/dsi"
 

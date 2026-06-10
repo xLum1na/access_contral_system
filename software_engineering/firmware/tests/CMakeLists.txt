@@ -49,3 +49,53 @@ target_include_directories(pal_test PRIVATE
     ${CMAKE_SOURCE_DIR}/mocks            # Mock 头文件 (esp_err.h, driver/gpio.h, ...)
     ${CMAKE_SOURCE_DIR}/../components/pal/pal_gpio/include  # pal_gpio.h
 )
+
+# ================================================================
+#  service_db 测试
+# ================================================================
+
+add_executable(service_db_test
+    ${UNITY_SRCS}
+    ${CMAKE_SOURCE_DIR}/test_service_db.c
+)
+
+target_compile_definitions(service_db_test PRIVATE
+    SOC_LEDC_TIMER_NUM=4
+    SOC_LEDC_CHANNEL_NUM=8
+)
+
+target_include_directories(service_db_test PRIVATE
+    ${CMAKE_SOURCE_DIR}/unity
+    ${CMAKE_SOURCE_DIR}/mocks
+    ${CMAKE_SOURCE_DIR}/../components/service/service_db
+    ${CMAKE_SOURCE_DIR}/../components/service/service_db/include
+    ${CMAKE_SOURCE_DIR}/../components/osal/include
+)
+
+# ================================================================
+#  service_mqtt 测试
+# ================================================================
+
+set(SERVICE_MQTT_SRCS
+    ${CMAKE_SOURCE_DIR}/../components/service/service_mqtt/service_mqtt.c
+)
+
+add_executable(service_mqtt_test
+    ${UNITY_SRCS}
+    ${SERVICE_MQTT_SRCS}
+    ${CMAKE_SOURCE_DIR}/test_service_mqtt.c
+)
+
+target_compile_definitions(service_mqtt_test PRIVATE
+    SOC_LEDC_TIMER_NUM=4
+    SOC_LEDC_CHANNEL_NUM=8
+)
+
+target_include_directories(service_mqtt_test PRIVATE
+    ${CMAKE_SOURCE_DIR}/unity
+    ${CMAKE_SOURCE_DIR}/mocks
+    ${CMAKE_SOURCE_DIR}/../components/service/service_mqtt
+    ${CMAKE_SOURCE_DIR}/../components/service/service_mqtt/include
+    ${CMAKE_SOURCE_DIR}/../components/osal/include
+    ${CMAKE_SOURCE_DIR}/../components/pal/pal_log/include
+)

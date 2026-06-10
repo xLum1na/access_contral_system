@@ -8,8 +8,6 @@ idf_component_register(
         "dal_display/dal_display.c"
         "dal_display/attiny88.c"
         "dal_display/tc358762.c"
-        "dal_camera/dal_camera.c"
-        "dal_camera/imx219.c"
         "dal_audio/es8311.c"
         "dal_audio/dal_audio.c"
 
@@ -19,7 +17,6 @@ idf_component_register(
         "dal_relay/include"
         "dal_network/include"
         "dal_display/include"
-        "dal_camera/include"
         "dal_audio/include"
 
     REQUIRES
