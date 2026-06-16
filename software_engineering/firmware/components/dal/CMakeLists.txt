@@ -10,6 +10,7 @@ idf_component_register(
         "dal_display/tc358762.c"
         "dal_audio/es8311.c"
         "dal_audio/dal_audio.c"
+        "dal_pir/dal_pir.c"
 
     INCLUDE_DIRS
         "dal_touch/include"
@@ -18,6 +19,7 @@ idf_component_register(
         "dal_network/include"
         "dal_display/include"
         "dal_audio/include"
+        "dal_pir/include"
 
     REQUIRES
         pal osal esp_eth esp_netif fatfs sdmmc)
