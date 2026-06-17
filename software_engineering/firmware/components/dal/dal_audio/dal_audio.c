@@ -29,30 +29,15 @@ int dal_audio_init(dal_audio_handle_t *handle, const dal_audio_config_t *cfg)
     memcpy(&c->cfg, cfg, sizeof(*cfg));
     esp_err_t ret;
 
-    /* 1. I2C 挂载 ES8311 (0x18) */
-    pal_i2c_dev_config_t dev_cfg = { .device_address = 0x18, .scl_speed_hz = 400000 };
-    ret = pal_i2c_dev_attach(&c->i2c_dev, (pal_i2c_bus_handle_t)cfg->i2c_bus_handle, &dev_cfg);
-    if (ret) { free(c); return ret; }
-
-    /* 2. ES8311 初始化 */
-    ret = es8311_init(&c->codec, c->i2c_dev);
-    if (ret) { pal_i2c_dev_detach(c->i2c_dev); free(c); return ret; }
-
-    /* 2b. 外部 PA 使能 */
-    if (cfg->pa_pin >= 0) {
-        pal_gpio_set_direction(cfg->pa_pin, 1); /* OUTPUT */
-        pal_gpio_write(cfg->pa_pin, 1);         /* HIGH = 功放开 */
-        ESP_LOGI(TAG, "PA GPIO%d ON", cfg->pa_pin);
-    }
-
-    /* 3. I2S 初始化 */
+    /* 1. I2S 初始化，先输出稳定 MCLK/BCLK/LRCK 供 Codec 使用 */
     i2s_chan_config_t ch_cfg = I2S_CHANNEL_DEFAULT_CONFIG(cfg->i2s_port, I2S_ROLE_MASTER);
+    ch_cfg.auto_clear = true;
     ret = i2s_new_channel(&ch_cfg, &c->tx_chan, NULL);
     if (ret) goto fail;
 
     i2s_std_config_t std_cfg = {
         .clk_cfg  = I2S_STD_CLK_DEFAULT_CONFIG(cfg->sample_rate),
-        .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+        .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
         .gpio_cfg = { .mclk = cfg->mclk_pin, .bclk = cfg->sclk_pin,
                       .ws = cfg->lclk_pin, .dout = cfg->dout_pin, .din = cfg->din_pin,
                       .invert_flags = { .mclk_inv=0,.bclk_inv=0,.ws_inv=0 } },
@@ -61,6 +46,22 @@ int dal_audio_init(dal_audio_handle_t *handle, const dal_audio_config_t *cfg)
     if (ret) goto fail;
     ret = i2s_channel_enable(c->tx_chan);
     if (ret) goto fail;
+
+    /* 2. I2C 挂载 ES8311 (0x18) */
+    pal_i2c_dev_config_t dev_cfg = { .device_address = 0x18, .scl_speed_hz = 400000 };
+    ret = pal_i2c_dev_attach(&c->i2c_dev, (pal_i2c_bus_handle_t)cfg->i2c_bus_handle, &dev_cfg);
+    if (ret) goto fail;
+
+    /* 3. ES8311 初始化 */
+    ret = es8311_init(&c->codec, c->i2c_dev);
+    if (ret) goto fail;
+
+    /* 4. 外部 PA 使能 */
+    if (cfg->pa_pin >= 0) {
+        pal_gpio_set_direction(cfg->pa_pin, 1); /* OUTPUT */
+        pal_gpio_write(cfg->pa_pin, 1);         /* HIGH = 功放开 */
+        ESP_LOGI(TAG, "PA GPIO%d ON", cfg->pa_pin);
+    }
 
     c->inited = true; *handle = (dal_audio_handle_t)c;
     PAL_LOGI(TAG, "初始化完成 (%d Hz)", cfg->sample_rate); return 0;

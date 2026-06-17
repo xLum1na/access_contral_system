@@ -5,6 +5,7 @@ idf_component_register(
         "dal_storage/dal_storage.c"
         "dal_relay/dal_relay.c"
         "dal_network/dal_network.c"
+        "dal_camera/dal_camera.c"
         "dal_display/dal_display.c"
         "dal_display/attiny88.c"
         "dal_display/tc358762.c"
@@ -17,9 +18,12 @@ idf_component_register(
         "dal_storage/include"
         "dal_relay/include"
         "dal_network/include"
+        "dal_camera/include"
         "dal_display/include"
         "dal_audio/include"
         "dal_pir/include"
+        "dal_config/include"
 
     REQUIRES
-        pal osal esp_eth esp_netif fatfs sdmmc)
+        pal osal driver esp_eth esp_netif fatfs sdmmc
+        esp_video esp_cam_sensor esp_sccb_intf esp_timer esp_psram)

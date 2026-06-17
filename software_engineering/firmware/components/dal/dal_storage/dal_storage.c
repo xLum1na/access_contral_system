@@ -46,7 +46,9 @@ int dal_storage_init(dal_storage_handle_t *handle,
     host.max_freq_khz = cfg->freq_khz ? cfg->freq_khz : SDMMC_FREQ_DEFAULT;
 
     /* SD 卡 LDO 供电 (通道 4, 3.3V) */
-    sd_pwr_ctrl_ldo_config_t ldo_cfg = { .ldo_chan_id = 4 };
+    sd_pwr_ctrl_ldo_config_t ldo_cfg = { 
+        .ldo_chan_id = 4,
+    };
     sd_pwr_ctrl_handle_t pwr_ctrl = NULL;
     esp_err_t ldo_ret = sd_pwr_ctrl_new_on_chip_ldo(&ldo_cfg, &pwr_ctrl);
     if (ldo_ret == ESP_OK) {

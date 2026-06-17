@@ -23,17 +23,37 @@ typedef void *pal_i2c_dev_handle_t;
 typedef struct es8311_dev *es8311_handle_t;
 
 /* ---- 寄存器地址 ---- */
-#define ES8311_REG_RESET          0x00   /**< 复位 (写 0x1F=上电默认, 0x00=复位) */
-#define ES8311_REG_CLK_MGR        0x01   /**< 时钟管理 */
-#define ES8311_REG_SYS_PWR        0x02   /**< 系统电源控制 */
-#define ES8311_REG_SERIAL_CTRL1   0x0A   /**< 串行数据控制1 (I2S 格式) */
-#define ES8311_REG_SERIAL_CTRL2   0x0B   /**< 串行数据控制2 */
-#define ES8311_REG_ADC_CTRL1      0x0D   /**< ADC 控制1 */
-#define ES8311_REG_DAC_CTRL1      0x14   /**< DAC 控制1 */
-#define ES8311_REG_DAC_CTRL2      0x15   /**< DAC 控制2 */
-#define ES8311_REG_GPIO_CTRL1     0x17   /**< GPIO 控制1 (PA 使能) */
-#define ES8311_REG_GPIO_CTRL2     0x18   /**< GPIO 控制2 */
-#define ES8311_REG_VOLUME         0x2B   /**< DAC 音量 (0x00=-96dB, 0xC0=0dB) */
+#define ES8311_REG_RESET          0x00   /**< 复位 / 模式控制 */
+#define ES8311_REG_CLK_MGR1       0x01   /**< 时钟管理1 */
+#define ES8311_REG_CLK_MGR2       0x02   /**< 时钟管理2 */
+#define ES8311_REG_CLK_MGR3       0x03   /**< ADC OSR */
+#define ES8311_REG_CLK_MGR4       0x04   /**< DAC OSR */
+#define ES8311_REG_CLK_MGR5       0x05   /**< ADC/DAC 分频 */
+#define ES8311_REG_CLK_MGR6       0x06   /**< BCLK 分频 */
+#define ES8311_REG_CLK_MGR7       0x07   /**< LRCK 分频高位 */
+#define ES8311_REG_CLK_MGR8       0x08   /**< LRCK 分频低位 */
+#define ES8311_REG_SDP_IN         0x09   /**< DAC 串行输入端口 */
+#define ES8311_REG_SDP_OUT        0x0A   /**< ADC 串行输出端口 */
+#define ES8311_REG_SYS0B          0x0B   /**< 系统控制 */
+#define ES8311_REG_SYS0C          0x0C   /**< 系统控制 */
+#define ES8311_REG_SYS0D          0x0D   /**< 电源控制 */
+#define ES8311_REG_SYS0E          0x0E   /**< 电源控制 */
+#define ES8311_REG_SYS10          0x10   /**< 系统控制 */
+#define ES8311_REG_SYS11          0x11   /**< 系统控制 */
+#define ES8311_REG_SYS12          0x12   /**< DAC 使能 */
+#define ES8311_REG_SYS13          0x13   /**< 系统控制 */
+#define ES8311_REG_SYS14          0x14   /**< 系统控制 */
+#define ES8311_REG_ADC15          0x15   /**< ADC 控制 */
+#define ES8311_REG_ADC16          0x16   /**< ADC 增益 */
+#define ES8311_REG_ADC17          0x17   /**< ADC 音量 */
+#define ES8311_REG_ADC1B          0x1B   /**< ADC 高通 */
+#define ES8311_REG_ADC1C          0x1C   /**< ADC 高通 */
+#define ES8311_REG_DAC31          0x31   /**< DAC 静音控制 */
+#define ES8311_REG_DAC32          0x32   /**< DAC 音量 */
+#define ES8311_REG_DAC37          0x37   /**< DAC ramp */
+#define ES8311_REG_GPIO44         0x44   /**< GPIO / 参考配置 */
+#define ES8311_REG_GP45           0x45   /**< GP 控制 */
+#define ES8311_REG_VOLUME         ES8311_REG_DAC32 /**< DAC 音量寄存器 */
 
 /** @brief 音量预设 */
 #define ES8311_VOLUME_MIN         0x00   /**< 静音 */

@@ -9,6 +9,7 @@
 #include "pal_mipi_dsi.h"
 
 #include "esp_lcd_mipi_dsi.h"
+#include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_types.h"
 #include "driver/ledc.h"
@@ -119,7 +120,7 @@ int pal_mipi_dsi_init(pal_mipi_dsi_handle_t *handle,
         return ret;
     }
 
-    /* ---- 2. 创建 Panel IO（DBI 命令接口，用于 DAL 层发送面板命令） ---- */
+    /* ---- 2. 创建并删除临时 DBI IO，锁存 DSI LP 命令通道配置 ---- */
     esp_lcd_dbi_io_config_t io_cfg = {
         .virtual_channel = cfg->virtual_channel,
         .lcd_cmd_bits    = 8,
@@ -132,6 +133,8 @@ int pal_mipi_dsi_init(pal_mipi_dsi_handle_t *handle,
         free(ctx);
         return ret;
     }
+    esp_lcd_panel_io_del(ctx->panel_io);
+    ctx->panel_io = NULL;
 
     /* ---- 3. 创建 DPI 面板（视频模式） ---- */
     esp_lcd_dpi_panel_config_t panel_cfg = {
@@ -175,8 +178,7 @@ int pal_mipi_dsi_init(pal_mipi_dsi_handle_t *handle,
         mipi_dsi_host_ll_dpi_enable_frame_ack(bus->hal.host, false);
     }
 
-    /* 标准面板初始化流程：复位 → 初始化 */
-    esp_lcd_panel_reset(ctx->panel);
+    /* DPI 面板无独立 reset 回调，直接执行初始化，避免 ESP-IDF 打印 unsupported 错误。 */
     esp_lcd_panel_init(ctx->panel);
 
     /* ---- 3b. DSI 主机后配置（面板 init 后设置） ---- */
@@ -251,6 +253,9 @@ int pal_mipi_dsi_deinit(pal_mipi_dsi_handle_t handle)
     if (ctx->panel != NULL) {
         esp_lcd_panel_del(ctx->panel);
     }
+    if (ctx->panel_io != NULL) {
+        esp_lcd_panel_io_del(ctx->panel_io);
+    }
     if (ctx->dsi_bus != NULL) {
         esp_lcd_del_dsi_bus(ctx->dsi_bus);
     }
@@ -269,7 +274,9 @@ int pal_mipi_dsi_display_on(pal_mipi_dsi_handle_t handle)
     if (ctx == NULL || ctx->panel == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    return esp_lcd_panel_disp_on_off(ctx->panel, true);
+
+    /* DPI 面板视频流已在 init 阶段启动，disp_on_off 对该面板不支持。 */
+    return ESP_OK;
 }
 
 int pal_mipi_dsi_display_off(pal_mipi_dsi_handle_t handle)
@@ -278,7 +285,9 @@ int pal_mipi_dsi_display_off(pal_mipi_dsi_handle_t handle)
     if (ctx == NULL || ctx->panel == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    return esp_lcd_panel_disp_on_off(ctx->panel, false);
+
+    /* DPI 面板无独立 display off 回调，电源/背光由 DAL/ATTINY88 管理。 */
+    return ESP_OK;
 }
 
 /* ================================================================
@@ -318,45 +327,40 @@ int pal_mipi_dsi_fill(pal_mipi_dsi_handle_t handle,
     }
 
     int bpp = bpp_from_format(ctx->cfg.in_color_format);
-    size_t row_bytes = (size_t)w * bpp;
-    uint8_t *row = malloc(row_bytes);
-    if (row == NULL) {
-        return ESP_ERR_NO_MEM;
+    uint8_t *fb = (uint8_t *)ctx->fb[0];
+    if (fb == NULL) {
+        return ESP_ERR_INVALID_STATE;
     }
 
-    /* 预填充一行像素数据 */
+    /* 直接写帧缓冲，再走 draw_bitmap 的零拷贝路径触发 cache write-back。 */
     if (bpp >= 3) {
         uint8_t r = (uint8_t)((color >> 16) & 0xFF);
         uint8_t g = (uint8_t)((color >> 8) & 0xFF);
         uint8_t b_val = (uint8_t)(color & 0xFF);
-        for (uint16_t i = 0; i < w; i++) {
-            row[i * 3 + 0] = b_val; /* B */
-            row[i * 3 + 1] = g;     /* G */
-            row[i * 3 + 2] = r;     /* R */
+        for (uint16_t row_y = 0; row_y < h; row_y++) {
+            uint8_t *dst = fb + (((size_t)y + row_y) * ctx->cfg.h_res + x) * bpp;
+            for (uint16_t col = 0; col < w; col++) {
+                dst[col * 3 + 0] = b_val;
+                dst[col * 3 + 1] = g;
+                dst[col * 3 + 2] = r;
+            }
         }
     } else {
         uint8_t hi = (uint8_t)((color >> 8) & 0xFF);
         uint8_t lo = (uint8_t)(color & 0xFF);
-        for (uint16_t i = 0; i < w; i++) {
-            row[i * 2 + 0] = hi;
-            row[i * 2 + 1] = lo;
+        for (uint16_t row_y = 0; row_y < h; row_y++) {
+            uint8_t *dst = fb + (((size_t)y + row_y) * ctx->cfg.h_res + x) * bpp;
+            for (uint16_t col = 0; col < w; col++) {
+                dst[col * 2 + 0] = hi;
+                dst[col * 2 + 1] = lo;
+            }
         }
     }
 
-    /* 逐行调用 draw_bitmap 完成填充 */
-    esp_err_t ret = ESP_OK;
-    for (uint16_t row_y = 0; row_y < h; row_y++) {
-        ret = esp_lcd_panel_draw_bitmap(ctx->panel,
-                                        (int)x, (int)(y + row_y),
-                                        (int)(x + w), (int)(y + row_y + 1),
-                                        row);
-        if (ret != ESP_OK) {
-            break;
-        }
-    }
-
-    free(row);
-    return ret;
+    return esp_lcd_panel_draw_bitmap(ctx->panel,
+                                     (int)x, (int)y,
+                                     (int)(x + w), (int)(y + h),
+                                     fb + ((size_t)y * ctx->cfg.h_res + x) * bpp);
 }
 
 int pal_mipi_dsi_get_fb(pal_mipi_dsi_handle_t handle,
